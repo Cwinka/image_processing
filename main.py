@@ -4,33 +4,12 @@ from typing import Union, Tuple
 import os
 import sys
 import time
-from downsize import lower_size
-
-
-def get_str_time(seconds):
-    mm = seconds // 60
-    ss = seconds % 60
-    ss = ss if ss > 9 else f"0{ss}"
-    return f"{mm}:{ss}min"
-
-def estimate_time(tt: float, current: int, whole:int, msg:str):
-    """ Prints inline message and estimation time to finish """
-    path = (whole - current)
-    est_time = round(path * tt)
-    str_time = get_str_time(est_time)
-    print(f"{msg} time left: {str_time}", end='')
-    print('\r', end='')
-
-def inline_print(msg):
-    print(msg, end='')
-    print('\r', end='')
-
-def inline_printed(f):
-    def wrap(*args, **kwargs):
-        res = f(*args, **kwargs)
-        print()
-        return res
-    return wrap 
+from side_func import (
+    inline_print,
+    inline_printed,
+    estimate_time,
+    get_new_name,
+)
     
 class Node:
     def __init__(self, color):
@@ -44,27 +23,30 @@ class Node:
         return str(self.color)
 
 class BaseImageGraph:
-    def __init__(self, img_name: str, graph_img: dict, nody_img: np.ndarray):
+    def __init__(self, img_url: str, nody_img: np.ndarray, graph_img: dict=None, factor=1):
         if type(nody_img) != np.ndarray:
             raise TypeError('Instance needs to be ndarray')
-        self.graph_img = graph_img
+        # self.graph_img = graph_img
         self.nody_img = nody_img
-        self.img_name = img_name
+        self.img_url = img_url
+        self.factor = factor
 
     @classmethod
-    def from_cv2_image(cls, img_name, img):
+    def from_cv2_image(cls, img_url, img, factor):
         if type(img) != np.ndarray:
             raise TypeError('Instance of img needs to be ndarray')
-        return cls(img_name=img_name,
-                   graph_img=cls.wrap_with_nodes(img),
-                   nody_img=img)
+        return cls(img_url=img_url,
+                   nody_img=img,
+                #    graph_img=cls.wrap_with_nodes(img),
+                   factor=factor)
 
     @classmethod
-    def from_image_url(cls, img_url):
+    def from_image_url(cls, img_url, factor):
         img = cv2.imread(img_url)
-        return cls(img_name=img_url,
-                   graph_img=cls.wrap_with_nodes(img),
-                   nody_img=img)
+        return cls(img_url=img_url,
+                   nody_img=img,
+                #    graph_img=cls.wrap_with_nodes(img),
+                   factor=factor)
 
     @staticmethod
     @inline_printed
@@ -86,15 +68,10 @@ class BaseImageGraph:
 
     def update(self, y, x, color):
         self.nody_img[y, x] = color
-        self.graph_img[y, x] = color
+        # self.graph_img[y, x] = color
     
     def save(self, name=''):
-        path, img_name = os.path.split(self.img_name)
-        img_name = img_name.split('.')[0]
-        if name:
-            img_name = name
-
-        out_name = os.path.join(path, f"{img_name}-remake.jpg")
+        out_name = get_new_name(self.img_url)
         cv2.imwrite(out_name, self.nody_img)
         print(f"Saved")
         return out_name
@@ -140,9 +117,9 @@ class ImageGraph(BaseImageGraph):
         self.height = self.nody_img.shape[0]
         self.width = self.nody_img.shape[1]
     
-    def __factorize(self, single_color: Union[int, float], factor: int) -> int:
+    def __factorize(self, single_color: Union[int, float]) -> int:
         """ Turns color into new one according to the factor """
-        res = int(round(factor * single_color / 255) * (255/factor))
+        res = int(round(self.factor * single_color / 255) * (255/self.factor))
         return res
 
     def __sure(self, color: Union[float, int, list]) -> Union[list, float, int]:
@@ -161,11 +138,10 @@ class ImageGraph(BaseImageGraph):
         return color
 
     @inline_printed
-    def to_gray(self, negative=False, **kwargs):
+    def to_gray(self):
         """ Make image gray
             :negative [int] - If true, the image will be gray negative
         """
-        negative = -1 if negative == True else 1
         for y in range(self.height):
             s = int(y/self.height*100)
             msg = f"Perform to gray {s+1}%/100%"
@@ -173,10 +149,10 @@ class ImageGraph(BaseImageGraph):
             for x in range(self.width):
                 color = self.nody_img[y, x]
                 gray_color = sum(color) / 3
-                self.update(y, x, gray_color * negative)
+                self.update(y, x, gray_color)
 
     @inline_printed
-    def dither(self, factor=1):
+    def dither(self):
         """ Make image gray
             :factor [int] - If 1, then all the colors will be changed to pure
             if 2 or more, spectrs of colors will be added
@@ -186,7 +162,7 @@ class ImageGraph(BaseImageGraph):
             s = int(y/self.height*100)
             msg = f"Dither rgb lay {s+1}%/100%"
             for x in range(self.width):
-                sp, _ = self.run_then_get_time(self.dither_do, args=(y, x, factor))
+                sp, _ = self.run_then_get_time(self.__dither_do, args=(y, x))
                 tt += sp # accumulate time in row
             estimate_time(  tt=tt,
                             current=y,
@@ -195,7 +171,7 @@ class ImageGraph(BaseImageGraph):
             tt = 0 # clear time
 
     @inline_printed
-    def dither_gray(self, factor=1):
+    def dither_gray(self):
         """ Make image gray
             :factor [int] - If 1, then all the colors will be changed to pure
             if 2 or more, spectrs of colors will be added
@@ -205,7 +181,7 @@ class ImageGraph(BaseImageGraph):
         for y in range(self.height):
             msg = f"Dither gray lay {y}/{self.height}"
             for x in range(self.width):
-                sp, _ = self.run_then_get_time(self.dither_do, args=(y, x, factor))
+                sp, _ = self.run_then_get_time(self.__dither_do, args=(y, x))
                 tt += sp # accumulate time in row
             estimate_time(  tt=tt,
                             current=y,
@@ -213,10 +189,10 @@ class ImageGraph(BaseImageGraph):
                             msg=msg)
             tt = 0
     
-    def dither_do(self, y:int, x:int, factor:int):
+    def __dither_do(self, y:int, x:int):
         """ Do dither on [y, x] pixel"""
         colors = self.nody_img[y, x]
-        new_color = np.array(list(map(lambda color: self.__factorize(color, factor), colors)))
+        new_color = np.array(list(map(lambda color: self.__factorize(color), colors)))
         self.update(y, x, new_color)
         quant_error = colors - new_color
 
@@ -233,20 +209,3 @@ class ImageGraph(BaseImageGraph):
             new_c = self.nody_img[y+1, x+1] + quant_error * 1/16
             self.update(y+1, x+1, self.__sure(new_c))
 
-    def __getitem__(self, action):
-        return getattr(self, action)
-
-actions = [
-    'dither', 'dither_gray', 'to_gray'
-]
-image_url = input("Enter image url or drag image here: ")
-b = ImageGraph.from_image_url(image_url)
-action = input("Enter action name: ")
-while action not in actions:
-    print(actions)
-    action = input("[ERROR] Enter proper action name: ")
-factor = int(input("Enter factor value (integer): "))
-
-b[action](factor=factor)
-out_name = b.save()
-lower_size(out_name)
