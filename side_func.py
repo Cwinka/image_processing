@@ -8,7 +8,12 @@ def get_str_time(seconds):
     return f"{mm}:{ss}min"
 
 def estimate_time(tt: float, current: int, whole:int, msg:str):
-    """ Prints inline message and estimation time to finish """
+    """ Prints inline message and estimation time to finish
+        :tt - time of a processing 1 row
+        :current - current row index
+        :whole - height of array, number of rows
+        :msg - message to show with estimation time
+    """
     path = (whole - current)
     est_time = round(path * tt)
     str_time = get_str_time(est_time)

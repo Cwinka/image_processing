@@ -3,6 +3,9 @@ from side_func import get_new_name
 
 
 class SizeReducer:
+    public_f = [
+        'lower_size'
+    ]
     def __init__(self, img_url):
         self.img_url = img_url
         self.out_name = get_new_name(img_url)
