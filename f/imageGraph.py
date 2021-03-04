@@ -4,7 +4,7 @@ from typing import Union, Tuple
 import os
 import sys
 import time
-from side_func import (
+from .side_func import (
     inline_print,
     inline_printed,
     estimate_time,
@@ -53,6 +53,10 @@ class BaseImageGraph:
     def from_image_url(cls, img_url:str, factor:int):
         """ Makes cls instance from image url """
         img = cv2.imread(img_url)
+        try
+           img.any()
+        except AttributeError:
+            raise OSError('Cannot open the file. Make sure the path contains only latin letters and no spaces') 
         return cls(img_url=img_url,
                    nody_img=img,
                 #    graph_img=cls.wrap_with_nodes(img),
@@ -182,7 +186,7 @@ class ImageGraph(BaseImageGraph):
         """
         for y in range(self.height):
             s = int(y/self.height*100) #!!
-            msg = f"Perform to gray {s+1}%/100%"
+            msg = f"Perform to gray {y}/{self.height}"
             inline_print(msg) #!!
             for x in range(self.width):
                 color = self.nody_img[y, x]
@@ -195,8 +199,8 @@ class ImageGraph(BaseImageGraph):
             if factor is 1, then all the colors will be changed to pure
             if 2 or more, spectrs of colors will be present
         """
-        tt = 0 # current time spent by row !!
         for y in range(self.height):
+            tt = 0 # current time spent by row !!
             msg = f"Dither lay {y}/{self.height}"
             for x in range(self.width):
                 sp, _ = self.run_then_get_time(self.__dither_do, args=(y, x)) #!!
@@ -205,7 +209,6 @@ class ImageGraph(BaseImageGraph):
                             current=y,
                             whole=self.height,
                             msg=msg)
-            tt = 0 # clear time !!
 
     @inline_printed
     def dither_gray(self):
@@ -214,8 +217,8 @@ class ImageGraph(BaseImageGraph):
             if 2 or more, spectrs of colors will be present
         """
         self.to_gray()
-        tt = 0 #!!
         for y in range(self.height):
+            tt = 0 #!!
             msg = f"Dither lay {y}/{self.height}"
             for x in range(self.width):
                 sp, _ = self.run_then_get_time(self.__dither_do, args=(y, x)) #!!
@@ -224,7 +227,6 @@ class ImageGraph(BaseImageGraph):
                             current=y,
                             whole=self.height,
                             msg=msg) #!!
-            tt = 0 #!!
     
     def __dither_do(self, y:int, x:int):
         """ Do dither on [y, x] pixel"""
@@ -245,4 +247,3 @@ class ImageGraph(BaseImageGraph):
         if (y<self.height-1 and x<self.width-1):
             new_c = self.nody_img[y+1, x+1] + quant_error * 1/16
             self.update_color(y+1, x+1, self.__sure(new_c))
-

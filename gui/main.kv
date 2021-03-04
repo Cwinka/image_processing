@@ -1,0 +1,88 @@
+#:kivy 2.0
+#: import Window kivy.core.window.Window
+#:set SYSTEM_BAR_HEIGHT 30
+#:set IMAGE_TOOLBAR_WIDTH 40
+#:set SYSTEM_INFO_BAR_HEIGHT 20
+
+FloatLayout:
+    BoxLayout:
+        padding: 0, SYSTEM_BAR_HEIGHT, IMAGE_TOOLBAR_WIDTH, SYSTEM_INFO_BAR_HEIGHT
+        BoxLayout:
+            padding: 10,10,10,10
+            CenteredAnchorLayout:
+                canvas.before:
+                    Color:
+                        rgb: 0.5,0.5,0.5
+                    Rectangle:
+                        size: self.size
+                        pos: self.pos
+                ImagePreview:
+                    size_hint: None,None
+                    height: 50
+                    width: 50
+                    canvas.before:
+                        Color:
+                            rgb: 0,0,0
+                        Rectangle:
+                            size: self.size
+                            pos: self.pos
+    AnchorLayout:
+        anchor_x: "left"
+        anchor_y: "top"
+        SystemToolbarLayout:
+            size_hint_y: None
+            height: SYSTEM_BAR_HEIGHT
+            canvas.before:
+                Color:
+                    rgb: .3,.3,.3
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+            SystemToolbar:
+                id: system_toolbar
+                padding: 10,0,0,0
+                orientation: "horizontal"
+                SystemToolbarItem:
+                    MDTextButton:
+                        text: 'File'
+                        on_release: system_toolbar.a()
+
+    ImageToolBarLayout:
+        size_hint_y: None
+        height: Window.height - SYSTEM_BAR_HEIGHT
+        ImageToolbar:
+            orientation: "vertical"
+            size_hint: None, None
+            width: IMAGE_TOOLBAR_WIDTH
+            height: 500
+            canvas.before:
+                Color:
+                    rgb: .3,.3,.3
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+
+            ImageToolbarItem:
+                MDTextButton:
+                    text: 'File'
+            ImageToolbarItem:
+                MDTextButton:
+                    text: 'File'
+            ImageToolbarItem:
+                MDTextButton:
+                    text: 'File'
+
+                    
+
+    
+    BoxLayout:
+        orientation: "horizontal"
+        size_hint_y: None
+        height: SYSTEM_INFO_BAR_HEIGHT
+        canvas.before:
+            Color:
+                rgb: 0.5,0.5,0.9
+            Rectangle:
+                size: self.size
+                pos: self.pos
+            

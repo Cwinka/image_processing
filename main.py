@@ -1,46 +1,71 @@
-from imageGraph import ImageGraph
-from sizeReducer import SizeReducer
+from kivy.lang import Builder
+from kivymd.app import MDApp
+from kivy.core.window import Window
+import os
+from kivy.config import Config
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.anchorlayout import AnchorLayout
+from kivy.uix.scatterlayout import ScatterLayout
+from f.sizeReducer import ImageP
 
-class Router:
-    workers = [] # list of all instances
-    public_f = [] # list of all instances methods.Requeires public_f attribute inside each worker
-    def dispatch(self, action:str):
-        """ Dispatch action, commonly inside ImageGraph oject """
-        if action not in self.public_f:
-            print(f'Does not supprot [{action}] method.')
-            return
 
-        for worker in self.workers:
-            # don't want to make try except block
-            # to prevent catch some errors inside worker.action func
-            if action in dir(worker):
-                getattr(worker, action)()
-            else:
-                continue
-    
-    def __update_public(self, worker: callable):
-        try:
-            self.public_f.extend(action for action in worker.public_f)
-        except AttributeError:
-            raise AttributeError(f"Class {worker} has no [public_f] attribute")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    def add_workers(self, workers):
-        for worker in workers:
-            self.workers.append(worker)
-            self.__update_public(worker)
+class SystemToolbarLayout(AnchorLayout):
+    anchor_x = "left"
+    anchor_y = "center"
+
+class SystemToolbar(BoxLayout):
+    def a(self):
+        print('Не трогай меня')
+
+class SystemToolbarItem(AnchorLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.size_hint_x = None
+        self.width = 30
+
+class ImageToolBarLayout(AnchorLayout):
+    anchor_x = "right"
+    anchor_y = "center"
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         
+class ImageToolbar(BoxLayout):
+    pass
 
-if __name__ == "__main__":
-    image_url = input("Enter image url or drag image here: ")
-    r = Router()
-    factor = int(input("Enter factor value (integer): "))
+class ImageToolbarItem(AnchorLayout):
+    anchor_x = "center"
+    anchor_y = "center"
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.size_hint_y = None
+        self.height = 50
 
-    r.add_workers([
-        SizeReducer(image_url),
-        ImageGraph.from_image_url(image_url, factor),
-        ])
+class ImagePreview(AnchorLayout):
+    anchor_x = "center"
+    anchor_y = "center"
 
-    action = input("Enter action name: ")
-    while True:
-        r.dispatch(action)
-        action = input("Enter action name: ")
+class TopCenterLayout(BoxLayout):
+    anchor_x = "center"
+    anchor_y = "top"
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.bind(minimum_height=self.setter('height'))
+
+class CenteredAnchorLayout(AnchorLayout):
+    anchor_x = "center"
+    anchor_y = "center"
+    
+class MyApp(MDApp):
+    def build(self):
+        Window.maximize()
+        Window.clearcolor = (.2,.2,.2,1)
+        self.root = Builder.load_file(os.path.join(BASE_DIR, 'gui', 'main.kv'))
+
+# MyApp = MyApp()
+# MyApp.run()
+
+a = ImageP.from_image_path(r'D:\Python_work\image_procecssing\0001-001-.jpg')
+a.quantize(colors=5)
+a.save()

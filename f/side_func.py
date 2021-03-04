@@ -5,7 +5,7 @@ def get_str_time(seconds):
     mm = seconds // 60
     ss = seconds % 60
     ss = ss if ss > 9 else f"0{ss}"
-    return f"{mm}:{ss}min"
+    return f"{mm}:{ss} min."
 
 def estimate_time(tt: float, current: int, whole:int, msg:str):
     """ Prints inline message and estimation time to finish
